@@ -275,42 +275,57 @@
     .matrix-wrap {
       display: flex;
       align-items: center;
-      gap: 1.5rem;
+      gap: 1rem;
       flex-wrap: wrap;
-      margin: 0.8rem 0;
+      margin: 1rem 0;
     }
     .matrix-label {
-      font-family: var(--mono);
-      font-size: 0.85rem;
+      font-family: var(--serif);
+      font-size: 1.15rem;
       color: var(--accent);
-      font-weight: 600;
+      font-style: italic;
     }
-    .matrix-grid {
-      display: inline-grid;
-      gap: 0;
-      border-left: 2px solid var(--muted);
-      border-right: 2px solid var(--muted);
-      padding: 0.25rem 0.5rem;
-      position: relative;
-    }
-    .matrix-grid::before,
-    .matrix-grid::after {
-      content: '';
-      position: absolute;
-      width: 6px;
-      height: 100%;
-      top: 0;
-    }
-    .matrix-row { display: flex; }
-    .matrix-cell {
-      font-family: var(--mono);
-      font-size: 0.88rem;
-      min-width: 3.5rem;
-      text-align: right;
-      padding: 0.25rem 0.5rem;
+    .matrix-equals {
+      font-size: 1.2rem;
       color: var(--text);
+      margin: 0 0.15rem;
     }
-    .matrix-cell.zero { color: var(--muted); }
+    .matrix-bracket {
+      display: inline-flex;
+      align-items: center;
+    }
+    .matrix-bracket-left,
+    .matrix-bracket-right {
+      display: flex;
+      align-items: center;
+      font-size: 3em;
+      line-height: 1;
+      color: var(--text);
+      font-weight: 200;
+      font-family: Georgia, serif;
+      user-select: none;
+    }
+    .matrix-bracket-left  { margin-right: 2px; }
+    .matrix-bracket-right { margin-left:  2px; }
+    .matrix-inner {
+      display: grid;
+      padding: 0.25rem 0.1rem;
+      row-gap: 0.3rem;
+      column-gap: 0;
+      align-items: center;
+    }
+    .matrix-cell {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 1.02rem;
+      min-width: 2.8rem;
+      text-align: right;
+      padding: 0.05rem 0.45rem;
+      color: var(--text);
+      line-height: 1.55;
+    }
+    .matrix-cell.zero {
+      color: var(--muted);
+    }
 
     /* ── Calculator ── */
     #calculator {
@@ -948,20 +963,29 @@
     }
   }
 
-  function matrixHTML(M, label, highlight) {
+  function matrixHTML(M, label) {
     const n = M.length;
-    let html = `<div class="matrix-wrap"><span class="matrix-label">${label} =</span><div class="matrix-grid" style="grid-template-columns:repeat(${n},auto)">`;
+    const cols = Array(n).fill('auto').join(' ');
+    let cells = '';
     for (let i = 0; i < n; i++) {
-      html += '<div class="matrix-row">';
       for (let j = 0; j < n; j++) {
         const v = M[i][j];
         const zero = v === 0;
-        html += `<span class="matrix-cell ${zero ? 'zero' : ''}">${v}</span>`;
+        cells += `<span class="matrix-cell ${zero ? 'zero' : ''}">${v}</span>`;
       }
-      html += '</div>';
     }
-    html += '</div></div>';
-    return html;
+    return `
+      <div class="matrix-wrap">
+        <span class="matrix-label">${label}</span>
+        <span class="matrix-equals">=</span>
+        <div class="matrix-bracket">
+          <span class="matrix-bracket-left">[</span>
+          <div class="matrix-inner" style="grid-template-columns:repeat(${n},auto)">
+            ${cells}
+          </div>
+          <span class="matrix-bracket-right">]</span>
+        </div>
+      </div>`;
   }
 
   function renderOutput(data) {
