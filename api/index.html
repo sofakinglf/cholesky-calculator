@@ -292,25 +292,24 @@
     }
     .matrix-bracket {
       display: inline-flex;
-      align-items: center;
+      align-items: stretch;
     }
     .matrix-bracket-left,
     .matrix-bracket-right {
       display: flex;
-      align-items: center;
-      font-size: 3em;
-      line-height: 1;
-      color: var(--text);
-      font-weight: 200;
-      font-family: Georgia, serif;
+      align-items: stretch;
       user-select: none;
     }
-    .matrix-bracket-left  { margin-right: 2px; }
-    .matrix-bracket-right { margin-left:  2px; }
+    .matrix-bracket-left svg,
+    .matrix-bracket-right svg {
+      width: 14px;
+      height: 100%;
+      display: block;
+    }
     .matrix-inner {
       display: grid;
-      padding: 0.25rem 0.1rem;
-      row-gap: 0.3rem;
+      padding: 0.4rem 0.1rem;
+      row-gap: 0.35rem;
       column-gap: 0;
       align-items: center;
     }
@@ -965,7 +964,6 @@
 
   function matrixHTML(M, label) {
     const n = M.length;
-    const cols = Array(n).fill('auto').join(' ');
     let cells = '';
     for (let i = 0; i < n; i++) {
       for (let j = 0; j < n; j++) {
@@ -974,16 +972,25 @@
         cells += `<span class="matrix-cell ${zero ? 'zero' : ''}">${v}</span>`;
       }
     }
+    // SVG brackets that stretch to 100% of parent height
+    const bracketL = `<span class="matrix-bracket-left">
+      <svg viewBox="0 0 10 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8,2 L3,2 L3,98 L8,98" fill="none" stroke="#e6edf3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg></span>`;
+    const bracketR = `<span class="matrix-bracket-right">
+      <svg viewBox="0 0 10 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2,2 L7,2 L7,98 L2,98" fill="none" stroke="#e6edf3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg></span>`;
     return `
       <div class="matrix-wrap">
         <span class="matrix-label">${label}</span>
         <span class="matrix-equals">=</span>
         <div class="matrix-bracket">
-          <span class="matrix-bracket-left">[</span>
+          ${bracketL}
           <div class="matrix-inner" style="grid-template-columns:repeat(${n},auto)">
             ${cells}
           </div>
-          <span class="matrix-bracket-right">]</span>
+          ${bracketR}
         </div>
       </div>`;
   }
