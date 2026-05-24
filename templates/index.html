@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cholesky Decomposition | Numerical Methods</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+
+  <!-- MathJax -->
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+      options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+
+  <style>
+    /* ─── Design: Academic precision meets clean dark scholarship ─── */
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #21262d;
+      --border:    #30363d;
+      --accent:    #e6a817;
+      --accent2:   #58a6ff;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --success:   #3fb950;
+      --error:     #f85149;
+      --mono:      'IBM Plex Mono', monospace;
+      --serif:     'DM Serif Display', Georgia, serif;
+      --sans:      'DM Sans', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    /* ── Header ── */
+    header {
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, #0d1117 60%, #161022);
+      padding: 0 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      padding: 0.9rem 0;
+    }
+    .badge {
+      background: var(--accent);
+      color: #000;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    header h1 {
+      font-family: var(--serif);
+      font-size: 1.25rem;
+      font-weight: 400;
+      color: var(--text);
+    }
+    nav {
+      margin-left: auto;
+      display: flex;
+      gap: 1.5rem;
+    }
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: color 0.2s;
+      letter-spacing: 0.02em;
+    }
+    nav a:hover { color: var(--accent); }
+
+    /* ── Layout ── */
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 3rem 2rem 6rem;
+    }
+
+    /* ── Section headers ── */
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .section-label .num {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--accent);
+      background: rgba(230,168,23,0.1);
+      border: 1px solid rgba(230,168,23,0.25);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+    .section-label h2 {
+      font-family: var(--serif);
+      font-size: 1.6rem;
+      font-weight: 400;
+      color: var(--text);
+    }
+
+    section { margin-bottom: 4rem; }
+    section > p { color: #c9d1d9; max-width: 780px; margin-bottom: 1.2rem; }
+
+    /* ── Math blocks ── */
+    .math-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 1.25rem 1.5rem;
+      margin: 1.2rem 0;
+      overflow-x: auto;
+      font-size: 1.05rem;
+    }
+    .math-block.center { text-align: center; }
+
+    /* ── Algorithm box ── */
+    .algo-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .algo-box h4 {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.8rem;
+    }
+    .algo-step {
+      display: flex;
+      gap: 1rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+    }
+    .algo-step:last-child { border-bottom: none; }
+    .algo-step .step-num {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--accent2);
+      min-width: 2rem;
+      padding-top: 0.1rem;
+    }
+    .algo-step p { font-size: 0.9rem; color: #c9d1d9; }
+
+    /* ── Properties grid ── */
+    .props-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .prop-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+    }
+    .prop-card h5 {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--accent2);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+    .prop-card p { font-size: 0.88rem; color: #c9d1d9; }
+
+    /* ── Worked examples ── */
+    .example-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    .example-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .example-header .ex-num {
+      background: var(--accent);
+      color: #000;
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 0.75rem;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .example-header h3 {
+      font-family: var(--serif);
+      font-size: 1.2rem;
+      font-weight: 400;
+    }
+
+    .step-row {
+      display: flex;
+      gap: 1rem;
+      margin: 0.8rem 0;
+      align-items: flex-start;
+    }
+    .step-row .sr-label {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      background: rgba(88,166,255,0.1);
+      color: var(--accent2);
+      border: 1px solid rgba(88,166,255,0.2);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      white-space: nowrap;
+      margin-top: 0.35rem;
+    }
+    .step-row .sr-content { flex: 1; }
+    .step-row .sr-content p { font-size: 0.9rem; color: #c9d1d9; margin-bottom: 0.3rem; }
+
+    .result-box {
+      background: rgba(63,185,80,0.08);
+      border: 1px solid rgba(63,185,80,0.25);
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      margin-top: 1rem;
+    }
+    .result-box h5 {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--success);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    /* ── Matrix display ── */
+    .matrix-wrap {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin: 0.8rem 0;
+    }
+    .matrix-label {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .matrix-grid {
+      display: inline-grid;
+      gap: 0;
+      border-left: 2px solid var(--muted);
+      border-right: 2px solid var(--muted);
+      padding: 0.25rem 0.5rem;
+      position: relative;
+    }
+    .matrix-grid::before,
+    .matrix-grid::after {
+      content: '';
+      position: absolute;
+      width: 6px;
+      height: 100%;
+      top: 0;
+    }
+    .matrix-row { display: flex; }
+    .matrix-cell {
+      font-family: var(--mono);
+      font-size: 0.88rem;
+      min-width: 3.5rem;
+      text-align: right;
+      padding: 0.25rem 0.5rem;
+      color: var(--text);
+    }
+    .matrix-cell.zero { color: var(--muted); }
+
+    /* ── Calculator ── */
+    #calculator {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+    }
+
+    .calc-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+    .calc-controls label {
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    select, input[type="number"], input[type="text"] {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 0.88rem;
+      padding: 0.45rem 0.8rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    select:focus, input:focus { border-color: var(--accent); }
+
+    .matrix-input-grid {
+      display: inline-grid;
+      gap: 0.4rem;
+      margin: 1rem 0;
+    }
+    .matrix-input-row { display: flex; gap: 0.4rem; }
+    .matrix-input-row input {
+      width: 5.5rem;
+      text-align: center;
+    }
+
+    .b-vec-inputs {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 1rem;
+    }
+    .b-vec-inputs label { font-size: 0.88rem; color: var(--muted); margin-right: 0.4rem; }
+    .b-vec-inputs input { width: 4.5rem; }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin: 1rem 0;
+    }
+    .toggle-row label { font-size: 0.88rem; color: var(--muted); }
+    input[type="checkbox"] { accent-color: var(--accent); width: 1rem; height: 1rem; cursor: pointer; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.4rem;
+      border: none;
+      border-radius: 6px;
+      font-family: var(--sans);
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+    }
+    .btn-primary:hover { background: #f0b82a; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(230,168,23,0.3); }
+    .btn-secondary {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--muted); color: var(--text); }
+
+    /* ── Output area ── */
+    #output { margin-top: 2rem; }
+
+    .output-section {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .output-section h4 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .steps-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    .steps-table th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+    }
+    .steps-table td {
+      padding: 0.45rem 0.75rem;
+      border-bottom: 1px solid rgba(48,54,61,0.5);
+      font-family: var(--mono);
+      color: #c9d1d9;
+    }
+    .steps-table tr:last-child td { border-bottom: none; }
+    .steps-table tr.diag td:first-child { color: var(--accent); }
+    .steps-table tr.off td:first-child { color: var(--accent2); }
+
+    .error-msg {
+      background: rgba(248,81,73,0.1);
+      border: 1px solid rgba(248,81,73,0.3);
+      color: var(--error);
+      border-radius: 6px;
+      padding: 0.8rem 1rem;
+      font-size: 0.88rem;
+      font-family: var(--mono);
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 700px) {
+      main { padding: 2rem 1rem 4rem; }
+      nav { display: none; }
+      .matrix-input-row input { width: 4.2rem; }
+    }
+
+    /* ── Scroll animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    section {
+      animation: fadeUp 0.5s ease both;
+    }
+    section:nth-child(1) { animation-delay: 0.05s; }
+    section:nth-child(2) { animation-delay: 0.15s; }
+    section:nth-child(3) { animation-delay: 0.25s; }
+    section:nth-child(4) { animation-delay: 0.35s; }
+  </style>
+</head>
+
+<body>
+
+<!-- ── HEADER ─────────────────────────────────── -->
+<header>
+  <div class="header-inner">
+    <span class="badge">Topic #09</span>
+    <h1>Cholesky Decomposition</h1>
+    <nav>
+      <a href="#discussion">Discussion</a>
+      <a href="#examples">Examples</a>
+      <a href="#calculator">Calculator</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ── MAIN ───────────────────────────────────── -->
+<main>
+
+  <!-- 1. MATHEMATICAL DISCUSSION -->
+  <section id="discussion">
+    <div class="section-label">
+      <span class="num">01</span>
+      <h2>Mathematical Discussion</h2>
+    </div>
+
+    <p>
+      Cholesky decomposition (pronounced <em>shuh-LES-kee</em>) is a factorization of a
+      <strong>symmetric positive-definite (SPD)</strong> matrix $A$ into the product of a
+      lower-triangular matrix $L$ and its transpose:
+    </p>
+
+    <div class="math-block center">
+      $$A = L L^T$$
+    </div>
+
+    <p>
+      Named after French military officer André-Louis Cholesky (1875–1918), it is roughly
+      <strong>twice as efficient</strong> as LU decomposition when the matrix is known to
+      be SPD, since it exploits the symmetry to halve the work.
+    </p>
+
+    <!-- Conditions -->
+    <div class="algo-box">
+      <h4>Required Conditions</h4>
+      <div class="algo-step">
+        <span class="step-num">C1</span>
+        <p><strong>Square:</strong> $A$ must be $n \times n$.</p>
+      </div>
+      <div class="algo-step">
+        <span class="step-num">C2</span>
+        <p><strong>Symmetric:</strong> $A = A^T$, i.e., $a_{ij} = a_{ji}$ for all $i, j$.</p>
+      </div>
+      <div class="algo-step">
+        <span class="step-num">C3</span>
+        <p><strong>Positive-definite:</strong> $\mathbf{x}^T A \mathbf{x} > 0$ for all non-zero $\mathbf{x} \in \mathbb{R}^n$. Equivalently, all leading principal minors (and hence all eigenvalues) are positive.</p>
+      </div>
+    </div>
+
+    <!-- Formulas -->
+    <div class="section-label" style="margin-top:2.5rem;">
+      <span class="num">—</span>
+      <h2 style="font-size:1.2rem;">Derivation of the Formulas</h2>
+    </div>
+
+    <p>
+      Expanding $A = LL^T$ entry by entry, each entry $a_{ij}$ satisfies:
+    </p>
+    <div class="math-block center">
+      $$a_{ij} = \sum_{k=1}^{\min(i,j)} l_{ik}\, l_{jk}$$
+    </div>
+    <p>
+      Solving column by column (left to right), for column $j$ of $L$:
+    </p>
+
+    <div class="math-block">
+      <p style="margin-bottom:0.6rem;"><strong>Diagonal entry</strong> ($i = j$):</p>
+      $$l_{jj} = \sqrt{a_{jj} - \sum_{k=1}^{j-1} l_{jk}^2}$$
+    </div>
+
+    <div class="math-block">
+      <p style="margin-bottom:0.6rem;"><strong>Sub-diagonal entry</strong> ($i > j$):</p>
+      $$l_{ij} = \frac{1}{l_{jj}}\!\left(a_{ij} - \sum_{k=1}^{j-1} l_{ik}\,l_{jk}\right)$$
+    </div>
+
+    <p>The upper triangle of $L$ is zero (it is strictly lower-triangular plus diagonal).</p>
+
+    <!-- Properties -->
+    <div class="props-grid">
+      <div class="prop-card">
+        <h5>Complexity</h5>
+        <p>$O(n^3 / 3)$ operations — about half that of Gaussian elimination on a general matrix.</p>
+      </div>
+      <div class="prop-card">
+        <h5>Uniqueness</h5>
+        <p>The decomposition is unique when $A$ is SPD and all diagonal entries of $L$ are taken positive.</p>
+      </div>
+      <div class="prop-card">
+        <h5>Numerical Stability</h5>
+        <p>Cholesky is unconditionally stable for SPD matrices—no pivoting is required.</p>
+      </div>
+      <div class="prop-card">
+        <h5>Applications</h5>
+        <p>Solving $Ax = b$, Monte Carlo simulation (Gaussian sampling), least-squares, and finite-element methods.</p>
+      </div>
+    </div>
+
+    <!-- Solve system -->
+    <div class="section-label" style="margin-top:2rem;">
+      <span class="num">—</span>
+      <h2 style="font-size:1.2rem;">Solving a Linear System $Ax = b$</h2>
+    </div>
+    <p>Once $A = LL^T$ is known, solve in two triangular sweeps:</p>
+    <div class="algo-box">
+      <h4>Algorithm</h4>
+      <div class="algo-step">
+        <span class="step-num">01</span>
+        <p><strong>Forward substitution</strong> — solve $L\mathbf{y} = \mathbf{b}$ for $\mathbf{y}$:
+          $$y_i = \frac{1}{l_{ii}}\!\left(b_i - \sum_{k=1}^{i-1} l_{ik}\,y_k\right)$$
+        </p>
+      </div>
+      <div class="algo-step">
+        <span class="step-num">02</span>
+        <p><strong>Backward substitution</strong> — solve $L^T\mathbf{x} = \mathbf{y}$ for $\mathbf{x}$:
+          $$x_i = \frac{1}{l_{ii}}\!\left(y_i - \sum_{k=i+1}^{n} l_{ki}\,x_k\right)$$
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. WORKED EXAMPLES -->
+  <section id="examples">
+    <div class="section-label">
+      <span class="num">02</span>
+      <h2>Worked Examples</h2>
+    </div>
+
+    <!-- ── Example 1: 3×3 ── -->
+    <div class="example-card">
+      <div class="example-header">
+        <span class="ex-num">1</span>
+        <div>
+          <h3>Cholesky Decomposition of a 3×3 Matrix</h3>
+          <p style="color:var(--muted);font-size:0.85rem;">Decompose $A$ and verify $A = LL^T$</p>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <span class="sr-label">Given</span>
+        <div class="sr-content">
+          <p>Symmetric positive-definite matrix:</p>
+          <div class="math-block center">
+            $$A = \begin{bmatrix} 4 & 2 & -2 \\ 2 & 10 & 2 \\ -2 & 2 & 5 \end{bmatrix}$$
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <span class="sr-label">Step 1</span>
+        <div class="sr-content">
+          <p><strong>Column $j=1$: compute $l_{11}$</strong></p>
+          <div class="math-block">
+            $$l_{11} = \sqrt{a_{11}} = \sqrt{4} = 2$$
+          </div>
+          <p>Sub-diagonal entries of column 1:</p>
+          <div class="math-block">
+            $$l_{21} = \frac{a_{21}}{l_{11}} = \frac{2}{2} = 1$$
+            $$l_{31} = \frac{a_{31}}{l_{11}} = \frac{-2}{2} = -1$$
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <span class="sr-label">Step 2</span>
+        <div class="sr-content">
+          <p><strong>Column $j=2$: compute $l_{22}$</strong></p>
+          <div class="math-block">
+            $$l_{22} = \sqrt{a_{22} - l_{21}^2} = \sqrt{10 - 1^2} = \sqrt{9} = 3$$
+          </div>
+          <p>Sub-diagonal entry of column 2:</p>
+          <div class="math-block">
+            $$l_{32} = \frac{a_{32} - l_{31}l_{21}}{l_{22}} = \frac{2 - (-1)(1)}{3} = \frac{3}{3} = 1$$
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <span class="sr-label">Step 3</span>
+        <div class="sr-content">
+          <p><strong>Column $j=3$: compute $l_{33}$</strong></p>
+          <div class="math-block">
+            $$l_{33} = \sqrt{a_{33} - l_{31}^2 - l_{32}^2} = \sqrt{5 - (-1)^2 - 1^2} = \sqrt{3} \approx 1.7321$$
+          </div>
+        </div>
+      </div>
+
+      <div class="result-box">
+        <h5>Result</h5>
+        <div class="math-block center" style="background:transparent;border:none;padding:0;">
+          $$L = \begin{bmatrix} 2 & 0 & 0 \\ 1 & 3 & 0 \\ -1 & 1 & \sqrt{3} \end{bmatrix}$$
+        </div>
+        <p style="margin-top:0.8rem;font-size:0.88rem;color:#c9d1d9;">
+          <strong>Verification — </strong>$LL^T$:
+        </p>
+        <div class="math-block center" style="background:transparent;border:none;padding:0.5rem 0;">
+          $$LL^T = \begin{bmatrix}2&0&0\\1&3&0\\-1&1&\sqrt3\end{bmatrix} \begin{bmatrix}2&1&-1\\0&3&1\\0&0&\sqrt3\end{bmatrix} = \begin{bmatrix}4&2&-2\\2&10&2\\-2&2&5\end{bmatrix} = A \checkmark$$
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Example 2: Solve system ── -->
+    <div class="example-card">
+      <div class="example-header">
+        <span class="ex-num">2</span>
+        <div>
+          <h3>Solving $Ax = b$ Using Cholesky</h3>
+          <p style="color:var(--muted);font-size:0.85rem;">Forward and backward substitution after factorisation</p>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <span class="sr-label">Given</span>
+        <div class="sr-content">
+          <div class="math-block center">
+            $$A = \begin{bmatrix}25 & 15 & -5 \\ 15 & 18 & 0 \\ -5 & 0 & 11\end{bmatrix}, \quad \mathbf{b} = \begin{bmatrix}35 \\ 33 \\ 6\end{bmatrix}$$
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <span class="sr-label">Step 1</span>
+        <div class="sr-content">
+          <p><strong>Cholesky Factorisation</strong></p>
+          <div class="math-block">
+            $$l_{11} = \sqrt{25} = 5$$
+            $$l_{21} = \frac{15}{5} = 3, \quad l_{31} = \frac{-5}{5} = -1$$
+            $$l_{22} = \sqrt{18 - 3^2} = \sqrt{9} = 3$$
+            $$l_{32} = \frac{0 - (-1)(3)}{3} = \frac{3}{3} = 1$$
+            $$l_{33} = \sqrt{11 - (-1)^2 - 1^2} = \sqrt{9} = 3$$
+          </div>
+          <div class="math-block center">
+            $$L = \begin{bmatrix}5 & 0 & 0 \\ 3 & 3 & 0 \\ -1 & 1 & 3\end{bmatrix}$$
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <span class="sr-label">Step 2</span>
+        <div class="sr-content">
+          <p><strong>Forward substitution — solve $L\mathbf{y} = \mathbf{b}$</strong></p>
+          <div class="math-block">
+            $$y_1 = \frac{35}{5} = 7$$
+            $$y_2 = \frac{33 - 3(7)}{3} = \frac{33 - 21}{3} = \frac{12}{3} = 4$$
+            $$y_3 = \frac{6 - (-1)(7) - (1)(4)}{3} = \frac{6 + 7 - 4}{3} = \frac{9}{3} = 3$$
+          </div>
+          <p style="font-size:0.88rem;color:#c9d1d9;">$\mathbf{y} = [7,\ 4,\ 3]^T$</p>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <span class="sr-label">Step 3</span>
+        <div class="sr-content">
+          <p><strong>Backward substitution — solve $L^T\mathbf{x} = \mathbf{y}$</strong></p>
+          <div class="math-block">
+            $$x_3 = \frac{3}{3} = 1$$
+            $$x_2 = \frac{4 - (1)(1)}{3} = \frac{3}{3} = 1$$
+            $$x_1 = \frac{7 - (3)(1) - (-1)(1)}{5} = \frac{7 - 3 + 1}{5} = \frac{5}{5} = 1$$
+          </div>
+        </div>
+      </div>
+
+      <div class="result-box">
+        <h5>Solution</h5>
+        <div class="math-block center" style="background:transparent;border:none;padding:0;">
+          $$\mathbf{x} = \begin{bmatrix}1\\1\\1\end{bmatrix}$$
+        </div>
+        <p style="margin-top:0.8rem;font-size:0.88rem;color:#c9d1d9;">
+          <strong>Verification — </strong>$A\mathbf{x}$:
+          $$25(1)+15(1)-5(1)=35,\quad 15(1)+18(1)+0(1)=33,\quad -5(1)+0(1)+11(1)=6 \checkmark$$
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. INTERACTIVE CALCULATOR -->
+  <section id="calculator">
+    <div class="section-label">
+      <span class="num">03</span>
+      <h2>Interactive Calculator</h2>
+    </div>
+    <p>Enter a symmetric positive-definite matrix. The calculator will perform Cholesky decomposition and optionally solve $Ax = b$.</p>
+
+    <div id="calculator">
+      <div class="calc-controls">
+        <label for="size">Matrix size:</label>
+        <select id="size" onchange="buildMatrix()">
+          <option value="2">2 × 2</option>
+          <option value="3" selected>3 × 3</option>
+          <option value="4">4 × 4</option>
+          <option value="5">5 × 5</option>
+          <option value="6">6 × 6</option>
+        </select>
+        <button class="btn btn-secondary" onclick="fillExample1()">Load Example 1</button>
+        <button class="btn btn-secondary" onclick="fillExample2()">Load Example 2</button>
+        <button class="btn btn-secondary" onclick="clearMatrix()">Clear</button>
+      </div>
+
+      <div>
+        <label style="font-size:0.88rem;color:var(--muted);">Matrix $A$:</label>
+        <div id="matrix-input" class="matrix-input-grid"></div>
+      </div>
+
+      <div class="toggle-row">
+        <input type="checkbox" id="solve-toggle" onchange="toggleBVec()"/>
+        <label for="solve-toggle">Also solve $A\mathbf{x} = \mathbf{b}$</label>
+      </div>
+
+      <div id="b-section" style="display:none;">
+        <div class="b-vec-inputs">
+          <label>Vector $\mathbf{b}$:</label>
+          <div id="b-inputs"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.25rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="runCalc()">▶ Decompose</button>
+      </div>
+
+      <div id="output"></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Cholesky Decomposition · PIT Project – Numerical Methods · Flask + MathJax
+</footer>
+
+<script>
+  let currentN = 3;
+
+  function buildMatrix(n) {
+    n = n || parseInt(document.getElementById('size').value);
+    currentN = n;
+    const grid = document.getElementById('matrix-input');
+    grid.style.gridTemplateColumns = 'auto';
+    grid.innerHTML = '';
+    for (let i = 0; i < n; i++) {
+      const row = document.createElement('div');
+      row.className = 'matrix-input-row';
+      for (let j = 0; j < n; j++) {
+        const inp = document.createElement('input');
+        inp.type = 'number';
+        inp.step = 'any';
+        inp.id = `m_${i}_${j}`;
+        inp.placeholder = `a${i+1}${j+1}`;
+        // Sync symmetry
+        inp.addEventListener('input', () => {
+          if (i !== j) {
+            const mirror = document.getElementById(`m_${j}_${i}`);
+            if (mirror && document.activeElement === inp) mirror.value = inp.value;
+          }
+        });
+        row.appendChild(inp);
+      }
+      grid.appendChild(row);
+    }
+    buildBVec(n);
+  }
+
+  function buildBVec(n) {
+    const cont = document.getElementById('b-inputs');
+    cont.innerHTML = '';
+    for (let i = 0; i < n; i++) {
+      const inp = document.createElement('input');
+      inp.type = 'number';
+      inp.step = 'any';
+      inp.id = `b_${i}`;
+      inp.placeholder = `b${i+1}`;
+      cont.appendChild(inp);
+    }
+  }
+
+  function toggleBVec() {
+    const on = document.getElementById('solve-toggle').checked;
+    document.getElementById('b-section').style.display = on ? 'block' : 'none';
+  }
+
+  function setMatrix(data) {
+    const n = data.length;
+    document.getElementById('size').value = n;
+    buildMatrix(n);
+    for (let i = 0; i < n; i++)
+      for (let j = 0; j < n; j++)
+        document.getElementById(`m_${i}_${j}`).value = data[i][j];
+  }
+
+  function fillExample1() {
+    setMatrix([[4,2,-2],[2,10,2],[-2,2,5]]);
+  }
+  function fillExample2() {
+    setMatrix([[25,15,-5],[15,18,0],[-5,0,11]]);
+    document.getElementById('solve-toggle').checked = true;
+    toggleBVec();
+    [35,33,6].forEach((v,i) => document.getElementById(`b_${i}`).value = v);
+  }
+  function clearMatrix() {
+    buildMatrix(currentN);
+    document.getElementById('output').innerHTML = '';
+  }
+
+  function getMatrix() {
+    const n = currentN;
+    const mat = [];
+    for (let i = 0; i < n; i++) {
+      const row = [];
+      for (let j = 0; j < n; j++) {
+        const v = parseFloat(document.getElementById(`m_${i}_${j}`).value);
+        if (isNaN(v)) throw new Error(`Cell (${i+1},${j+1}) is empty or invalid.`);
+        row.push(v);
+      }
+      mat.push(row);
+    }
+    return mat;
+  }
+
+  function getBVec(n) {
+    const b = [];
+    for (let i = 0; i < n; i++) {
+      const v = parseFloat(document.getElementById(`b_${i}`).value);
+      if (isNaN(v)) throw new Error(`b[${i+1}] is empty or invalid.`);
+      b.push(v);
+    }
+    return b;
+  }
+
+  async function runCalc() {
+    const out = document.getElementById('output');
+    out.innerHTML = '';
+    try {
+      const matrix = getMatrix();
+      const solve = document.getElementById('solve-toggle').checked;
+      const payload = { matrix, solve };
+      if (solve) payload.b = getBVec(currentN);
+
+      const resp = await fetch('/calculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+
+      if (data.error) {
+        out.innerHTML = `<div class="error-msg">⚠ ${data.error}</div>`;
+        return;
+      }
+
+      renderOutput(data);
+    } catch (e) {
+      out.innerHTML = `<div class="error-msg">⚠ ${e.message}</div>`;
+    }
+  }
+
+  function matrixHTML(M, label, highlight) {
+    const n = M.length;
+    let html = `<div class="matrix-wrap"><span class="matrix-label">${label} =</span><div class="matrix-grid" style="grid-template-columns:repeat(${n},auto)">`;
+    for (let i = 0; i < n; i++) {
+      html += '<div class="matrix-row">';
+      for (let j = 0; j < n; j++) {
+        const v = M[i][j];
+        const zero = v === 0;
+        html += `<span class="matrix-cell ${zero ? 'zero' : ''}">${v}</span>`;
+      }
+      html += '</div>';
+    }
+    html += '</div></div>';
+    return html;
+  }
+
+  function renderOutput(data) {
+    const out = document.getElementById('output');
+    let html = '';
+
+    // L matrix
+    html += `<div class="output-section">
+      <h4>Lower Triangular Factor L</h4>
+      ${matrixHTML(data.L, 'L')}
+    </div>`;
+
+    // Steps table
+    html += `<div class="output-section">
+      <h4>Step-by-Step Computation</h4>
+      <div style="overflow-x:auto;">
+      <table class="steps-table">
+        <thead>
+          <tr>
+            <th>Entry</th>
+            <th>Type</th>
+            <th>Formula</th>
+            <th>Σ term</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+    for (const s of data.steps) {
+      const entry = `L[${s.i+1}][${s.j+1}]`;
+      if (s.type === 'diagonal') {
+        html += `<tr class="diag">
+          <td>${entry}</td>
+          <td>Diagonal</td>
+          <td><code>${s.formula}</code></td>
+          <td>Σk²= ${s.sum_sq}</td>
+          <td><strong>${s.result}</strong></td>
+        </tr>`;
+      } else {
+        html += `<tr class="off">
+          <td>${entry}</td>
+          <td>Off-diag</td>
+          <td><code>${s.formula}</code></td>
+          <td>Σprod= ${s.sum_prod} &nbsp;÷ ${s.divisor}</td>
+          <td><strong>${s.result}</strong></td>
+        </tr>`;
+      }
+    }
+
+    html += `</tbody></table></div></div>`;
+
+    // Verification
+    html += `<div class="output-section">
+      <h4>Verification: L × Lᵀ = A</h4>
+      ${matrixHTML(data.reconstructed, 'LL^T')}
+    </div>`;
+
+    // Solve
+    if (data.x) {
+      html += `<div class="output-section">
+        <h4>System Solution: Ax = b</h4>
+        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.8rem;">Intermediate vector <strong>y</strong> from Ly = b:</p>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+          ${data.y.map((v,i) => `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0.4rem 0.8rem;font-family:var(--mono);font-size:0.85rem;">y<sub>${i+1}</sub> = ${v}</div>`).join('')}
+        </div>
+        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.8rem;">Solution <strong>x</strong> from Lᵀx = y:</p>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+          ${data.x.map((v,i) => `<div style="background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.3);border-radius:6px;padding:0.4rem 0.8rem;font-family:var(--mono);font-size:0.85rem;color:var(--success);">x<sub>${i+1}</sub> = ${v}</div>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    out.innerHTML = html;
+
+    // Re-render MathJax if any (steps formulas are plain text here)
+    if (window.MathJax) MathJax.typesetPromise([out]);
+  }
+
+  // Init
+  buildMatrix(3);
+</script>
+</body>
+</html>
