@@ -3,11 +3,12 @@ import math
 import json
 from flask import Flask, render_template, request, jsonify
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 app = Flask(
     __name__,
-    template_folder=os.path.join(os.path.dirname(__file__), '..', 'templates')
+    template_folder=os.path.join(BASE_DIR, '..', 'templates')
 )
-
 def cholesky_decompose(matrix):
     """
     Perform Cholesky decomposition on a symmetric positive-definite matrix.
