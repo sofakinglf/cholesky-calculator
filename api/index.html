@@ -30,6 +30,7 @@
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
+    section[id] { scroll-margin-top: 70px; }
     body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.7; font-size: 16px; }
 
     /* ── Header ── */
@@ -151,7 +152,7 @@
     .matrix-cell.zero { color: var(--muted); }
 
     /* ── Calculator ── */
-    #calculator { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+    #calculator { scroll-margin-top: 70px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
     .calc-controls { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
     .calc-controls label { font-size: 0.88rem; color: var(--muted); font-weight: 500; }
     select, input[type="number"] {
@@ -996,7 +997,8 @@ x = <span class="fn">solve_cholesky</span>(L, b);
     for (let i = 0; i < n; i++)
       for (let j = 0; j < n; j++) {
         const v = M[i][j];
-        cells += `<span class="matrix-cell ${v === 0 ? 'zero' : ''}">${v}</span>`;
+        const disp = fmt(v);
+        cells += `<span class="matrix-cell ${v === 0 ? 'zero' : ''}">${disp}</span>`;
       }
     const bL = `<span class="matrix-bracket-left"><svg viewBox="0 0 10 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="M8,2 L3,2 L3,98 L8,98" fill="none" stroke="#e6edf3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
     const bR = `<span class="matrix-bracket-right"><svg viewBox="0 0 10 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="M2,2 L7,2 L7,98 L2,98" fill="none" stroke="#e6edf3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
@@ -1011,20 +1013,70 @@ x = <span class="fn">solve_cholesky</span>(L, b);
     </div>`;
   }
 
+  /* ── Prompt 1: consistent 5-decimal formatting, integers stay integers ── */
+  function fmt(v) {
+    if (Number.isInteger(v)) return String(v);
+    const r = parseFloat(v.toFixed(5));
+    return Number.isInteger(r) ? String(r) : r.toFixed(5).replace(/\.?0+$/, '');
+  }
+
+  /* ── Prompt 2: build substituted formula string ── */
+  function buildSubFormula(s, L) {
+    if (s.type === 'diagonal') {
+      const j = s.j;
+      let inner = fmt(s.val + s.sum_sq); // a_jj original
+      // rebuild: sqrt(a_jj - l_j1^2 - l_j2^2 ...)
+      let parts = [fmt(s.val + s.sum_sq)];
+      for (let k = 0; k < j; k++) parts.push(`(${fmt(L[j][k])})²`);
+      if (j === 0) return `sqrt(${fmt(s.val + s.sum_sq)})`;
+      return `sqrt(${fmt(s.val + s.sum_sq)} - ${parts.slice(1).join(' - ')})`;
+    } else {
+      const i = s.i, j = s.j;
+      let aij = fmt(s.numerator + s.sum_prod);
+      let prods = [];
+      for (let k = 0; k < j; k++) prods.push(`${fmt(L[i][k])}×${fmt(L[j][k])}`);
+      let num = j === 0 ? aij : `${aij} - ${prods.join(' - ')}`;
+      return `(${num}) / ${fmt(s.divisor)}`;
+    }
+  }
+
   function renderOutput(data) {
     const out = document.getElementById('output');
     let html = '';
 
+    // Reconstruct L for substituted formula building
+    const n = data.n;
+    const L = data.L;
+
     html += `<div class="output-section"><h4>Lower Triangular Factor L</h4>${matrixHTML(data.L,'L')}</div>`;
 
     html += `<div class="output-section"><h4>Step-by-Step Computation</h4><div style="overflow-x:auto;">
-      <table class="steps-table"><thead><tr><th>Entry</th><th>Type</th><th>Formula</th><th>Σ Term</th><th>Value</th></tr></thead><tbody>`;
+      <table class="steps-table">
+        <thead><tr>
+          <th>Entry</th><th>Type</th>
+          <th>Algebraic Formula</th>
+          <th>Substituted Values</th>
+          <th>Value</th>
+        </tr></thead><tbody>`;
+
     for (const s of data.steps) {
       const e = `L[${s.i+1}][${s.j+1}]`;
+      const sub = buildSubFormula(s, L);
+      const val = fmt(s.result);
       if (s.type === 'diagonal')
-        html += `<tr class="diag"><td>${e}</td><td>Diagonal</td><td><code>${s.formula}</code></td><td>Σk²= ${s.sum_sq}</td><td><strong>${s.result}</strong></td></tr>`;
+        html += `<tr class="diag">
+          <td>${e}</td><td>Diagonal</td>
+          <td><code>${s.formula}</code></td>
+          <td><code>${sub}</code></td>
+          <td><strong>${val}</strong></td>
+        </tr>`;
       else
-        html += `<tr class="off"><td>${e}</td><td>Off-diag</td><td><code>${s.formula}</code></td><td>Σprod= ${s.sum_prod} ÷ ${s.divisor}</td><td><strong>${s.result}</strong></td></tr>`;
+        html += `<tr class="off">
+          <td>${e}</td><td>Off-diag</td>
+          <td><code>${s.formula}</code></td>
+          <td><code>${sub}</code></td>
+          <td><strong>${val}</strong></td>
+        </tr>`;
     }
     html += `</tbody></table></div></div>`;
 
@@ -1034,11 +1086,11 @@ x = <span class="fn">solve_cholesky</span>(L, b);
       html += `<div class="output-section"><h4>System Solution: Ax = b</h4>
         <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.7rem;">Intermediate vector <strong>y</strong> from Ly = b:</p>
         <div style="display:flex;gap:0.45rem;flex-wrap:wrap;margin-bottom:0.9rem;">
-          ${data.y.map((v,i)=>`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0.35rem 0.7rem;font-family:var(--mono);font-size:0.82rem;">y<sub>${i+1}</sub> = ${v}</div>`).join('')}
+          ${data.y.map((v,i)=>`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0.35rem 0.7rem;font-family:var(--mono);font-size:0.82rem;">y<sub>${i+1}</sub> = ${fmt(v)}</div>`).join('')}
         </div>
         <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.7rem;">Solution <strong>x</strong> from Lᵀx = y:</p>
         <div style="display:flex;gap:0.45rem;flex-wrap:wrap;">
-          ${data.x.map((v,i)=>`<div style="background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.3);border-radius:6px;padding:0.35rem 0.7rem;font-family:var(--mono);font-size:0.82rem;color:var(--success);">x<sub>${i+1}</sub> = ${v}</div>`).join('')}
+          ${data.x.map((v,i)=>`<div style="background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.3);border-radius:6px;padding:0.35rem 0.7rem;font-family:var(--mono);font-size:0.82rem;color:var(--success);">x<sub>${i+1}</sub> = ${fmt(v)}</div>`).join('')}
         </div>
       </div>`;
     }
