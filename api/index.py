@@ -1,15 +1,12 @@
-"""
-Cholesky Decomposition - Flask Web Application
-PIT Project – Numerical Methods Online Calculator
-"""
-
+import os
 import math
 import json
 from flask import Flask, render_template, request, jsonify
 
-app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), '..', 'templates'))
-
-
+app = Flask(
+    __name__,
+    template_folder=os.path.join(os.path.dirname(__file__), '..', 'templates')
+)
 
 def cholesky_decompose(matrix):
     """
